@@ -3,44 +3,103 @@ Tutorial demonstrates how to create a game window with Python Pygame.
 
 Any pygame program that you create will have this basic code
 '''
-
+import math
 import pygame
 import sys
 import random
 # Initialize Pygame and give access to all the methods in the package
 pygame.init()
+
 # Set up the screen dimensions
 screen_width = 800
 screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Agar.io")
+font = pygame.font.Font('NimbusSanL-Reg.otf', 10)
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, number, x, y):
+    def __init__(self, color):
         super(Enemy, self).__init__()
-        self.id = number
-        self.index = 0
-        self.files = ["4.0 Classes/jelly1.png","4.0 Classes/jelly2.png","4.0 Classes/jelly3.png"]
-        self.images = [pygame.image.load(filename).convert_alpha() for filename in self.files]
-        self.image = self.images[self.index]
-        self.rect = self.image.get_rect(center = (x,y))
-        self.deltax = random.choice([-2,-1,1,2])
-        self.deltay = random.choice([-2,-1,1,2])
+        self.x = random.randint(150,500)
+        self.y = random.randint(150,400)
+        self.radius = random.randint(20,150)
 
-    def move(self, count):
+        self.color = color
+        self.speed=100
+
+        self.x_heading = (1/self.radius) * self.speed
+        self.y_heading = (1/self.radius) * self.speed
+
+        self.image = pygame.Surface((self.radius*2, self.radius*2), pygame.SRCALPHA, 32)
+        self.image = self.image.convert_alpha()
+
+        pygame.draw.circle(self.image, color, (self.radius, self.radius), self.radius)
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+
+
+
+
+    def move(self):
         if self.rect.left <= -0 or self.rect.right >= 800:
-            self.deltax *= -1
-        if self.rect.top <= -100 or self.rect.bottom >= 600:
-            self.deltay *= -1
+            self.x_heading *= -1
+        if self.rect.top <= 0 or self.rect.bottom >= 600:
+            self.y_heading *= -1
                     
 
-        self.rect.centerx += self.deltax
-        self.rect.centery += self.deltay
+        self.rect.x += self.x_heading
+        self.rect.y += self.y_heading
 
-        if count%20 == 0:
-            self.index = (self.index+1)%3
-            self.image = self.images[self.index]
+
+
+class Player(Enemy):
+    def __init__(self,color):
+        super().__init__(color)
+        self.color=color
+        self.image=self.image.convert_alpha()
+        self.rect=self.image.get_rect(center=(100,100))
+        self.pos = pygame.Vector2(100,100)
+
+    def playerMove(self):
+        dest_x,dest_y=pygame.mouse.get_pos()
+        mouse_pos = pygame.math.Vector2(dest_x,dest_y)
+        direction=mouse_pos-self.rect.center
+
+        rise=self.rect.centerx-dest_x
+        run=self.rect.centery-dest_y
+        distance=int(math.sqrt(rise**2+run**2))
+        try:
+            velocity = direction.normalize()
+        except:
+            velocity = (0,0)
+
+        self.pos+=velocity
+
+
+        pygame.draw.line(screen, (255,0,0), (self.rect.center), (dest_x, dest_y))
+        pygame.draw.line(screen, (0,255,0), (self.rect.center), (self.rect.centerx, dest_y))
+        pygame.draw.line(screen, (0,0,255), (dest_x,dest_y), (self.rect.centerx, dest_y))
+
+        text = str(distance)
+        text = font.render(text, True, (255,0,0))
+        screen.blit(text, ((self.rect.centerx+dest_x)/2, (self.rect.centery+dest_y)/2))
+
+        text = str(run)
+        text = font.render(text, True, (0,255,0))
+        screen.blit(text, ((self.rect.centerx, (self.rect.centery+dest_y)/2)))
+
+        text = str(rise)
+        text = font.render(text, True, (0,0,255))
+        screen.blit(text, ((self.rect.centerx+dest_x)/2, dest_y))
+
+
+        pygame.display.flip()
+
+        self.rect=self.image.get_rect(center=(self.pos))
+
 
 
 
@@ -50,6 +109,15 @@ BLUE = (0, 0, 255)
 
 # Create clock to later control frame rate
 clock = pygame.time.Clock()
+
+enemies=pygame.sprite.Group()
+
+for num in range(3):
+    enemyColor = (random.randint(0,255), random.randint(0,255),random.randint(0,255))
+    enemies.add(Enemy(enemyColor))
+
+players = pygame.sprite.Group()
+players.add(Player("Black"))
 
 # Main game loop
 running = True
@@ -61,7 +129,14 @@ while running:
 
     # Fill the screen with a color (e.g., white)
     screen.fill(WHITE)
+    enemies.draw(screen)
+    players.draw(screen)
 
+    for enemy in enemies:
+        enemy.move()
+
+    for player in players:
+        player.playerMove()
     # Update the display
     pygame.display.flip()
 
