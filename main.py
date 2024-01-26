@@ -1,0 +1,73 @@
+'''
+Tutorial demonstrates how to create a game window with Python Pygame.
+
+Any pygame program that you create will have this basic code
+'''
+
+import pygame
+import sys
+import random
+# Initialize Pygame and give access to all the methods in the package
+pygame.init()
+# Set up the screen dimensions
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Agar.io")
+
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, number, x, y):
+        super(Enemy, self).__init__()
+        self.id = number
+        self.index = 0
+        self.files = ["4.0 Classes/jelly1.png","4.0 Classes/jelly2.png","4.0 Classes/jelly3.png"]
+        self.images = [pygame.image.load(filename).convert_alpha() for filename in self.files]
+        self.image = self.images[self.index]
+        self.rect = self.image.get_rect(center = (x,y))
+        self.deltax = random.choice([-2,-1,1,2])
+        self.deltay = random.choice([-2,-1,1,2])
+
+    def move(self, count):
+        if self.rect.left <= -0 or self.rect.right >= 800:
+            self.deltax *= -1
+        if self.rect.top <= -100 or self.rect.bottom >= 600:
+            self.deltay *= -1
+                    
+
+        self.rect.centerx += self.deltax
+        self.rect.centery += self.deltay
+
+        if count%20 == 0:
+            self.index = (self.index+1)%3
+            self.image = self.images[self.index]
+
+
+
+# Define colors
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+
+# Create clock to later control frame rate
+clock = pygame.time.Clock()
+
+# Main game loop
+running = True
+while running:
+    # Event handling
+    for event in pygame.event.get(): # pygame.event.get()
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Fill the screen with a color (e.g., white)
+    screen.fill(WHITE)
+
+    # Update the display
+    pygame.display.flip()
+
+    # Set a frame rate to 60 frames per second
+    clock.tick(60)
+
+# Quit Pygame properly
+pygame.quit()
+sys.exit()
